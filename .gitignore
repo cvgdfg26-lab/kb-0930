@@ -1,0 +1,24 @@
+# 环境与配置
+.venv/
+.idea/
+__pycache__/
+*.pyc
+docs/
+docs1/
+knowledge/temp_data/
+knowledge/test/
+
+# 本地密钥与部署配置
+.env
+.env.*
+!.env.example
+
+# 运行日志与导入中间文件
+*.log
+knowledge/.runtime_logs/
+knowledge/processor/import_process/import_temp_dir/
+
+# 本地模型与缓存文件
+*.pt
+*.pth
+*.safetensors
