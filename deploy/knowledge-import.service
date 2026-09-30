@@ -1,0 +1,15 @@
+[Unit]
+Description=Knowledge Base Import API
+After=network-online.target docker.service shopkeeper-gpu-tunnel.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/shopkeeper-brain
+ExecStart=/home/ubuntu/shopkeeper-brain/.venv/bin/python -m uvicorn knowledge.api.import_router:create_app --factory --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

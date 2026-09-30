@@ -359,6 +359,20 @@
       return s.replace(/\s/g, '%20');
     }
 
+    function imageDisplayUrl(rawUrl){
+      // MinIO 只监听服务器本机；浏览器通过当前聊天服务的图片接口读取对象。
+      const normalized = normalizeUrl(rawUrl);
+      try {
+        const url = new URL(normalized, location.origin);
+        if(url.port === '9000' && ['127.0.0.1', 'localhost', '192.168.10.150'].includes(url.hostname)){
+          return `${location.origin}/images${url.pathname}`;
+        }
+      } catch (e) {
+        return normalized;
+      }
+      return normalized;
+    }
+
     function dedupeKeepOrder(arr){
       const seen = new Set();
       const out = [];
@@ -491,10 +505,14 @@
 
       containerEl.textContent = '';
 
-      if((text || '').trim().length > 0){
+      // 独占一行的图片 URL 已在下方渲染为图片，不再重复显示不可访问的原始地址。
+      const visibleText = String(text || '').split(/\r?\n/)
+        .filter(line => !isImageUrl(line.trim()))
+        .join('\n').trimEnd();
+      if(visibleText.trim().length > 0){
         const textEl = document.createElement('div');
         textEl.className = 'answer-text';
-        textEl.textContent = text;
+        textEl.textContent = visibleText;
         containerEl.appendChild(textEl);
       }else{
         const textEl = document.createElement('div');
@@ -507,7 +525,7 @@
         const imgWrap = document.createElement('div');
         imgWrap.className = 'answer-images';
         for(const url of images){
-          const safeUrl = normalizeUrl(url);
+          const safeUrl = imageDisplayUrl(url);
           const img = document.createElement('img');
           img.loading = 'lazy';
           img.src = safeUrl;
@@ -522,7 +540,7 @@
           link.href = safeUrl;
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
-          link.textContent = url;
+          link.textContent = '查看原图';
           imgWrap.appendChild(link);
         }
         containerEl.appendChild(imgWrap);
@@ -891,5 +909,4 @@
   </script>
 </body>
 </html>
-
 

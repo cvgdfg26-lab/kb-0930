@@ -1,0 +1,102 @@
+# 知识库专用存储服务。数据保存在同目录的 volumes/，该目录不进入 Git。
+# 仅监听服务器回环地址；应用在同一台主机上通过 127.0.0.1 连接。
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.18
+    restart: unless-stopped
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+    volumes:
+      - ./volumes/milvus-etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+
+  milvus-minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    restart: unless-stopped
+    environment:
+      MINIO_ACCESS_KEY: ${MILVUS_MINIO_ACCESS_KEY:?请在 deploy/.env 配置}
+      MINIO_SECRET_KEY: ${MILVUS_MINIO_SECRET_KEY:?请在 deploy/.env 配置}
+    volumes:
+      - ./volumes/milvus-minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+
+  milvus:
+    image: milvusdb/milvus:v2.5.5
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+    volumes:
+      - ./volumes/milvus:/var/lib/milvus
+    ports:
+      - "127.0.0.1:19530:19530"
+      - "127.0.0.1:9091:9091"
+    depends_on:
+      - etcd
+      - milvus-minio
+
+  # Attu 是数据库管理界面，仅在服务器本机监听，通过临时 SSH 转发访问。
+  attu:
+    image: zilliz/attu:v2.5.10
+    restart: unless-stopped
+    environment:
+      MILVUS_URL: milvus:19530
+    ports:
+      - "127.0.0.1:7000:3000"
+    depends_on:
+      - milvus
+
+  mongo:
+    image: mongo:8.2.6
+    restart: unless-stopped
+    volumes:
+      - ./volumes/mongo-db:/data/db
+      - ./volumes/mongo-config:/data/configdb
+    ports:
+      - "127.0.0.1:27017:27017"
+
+  # MongoDB 管理界面仅在服务器本机监听，通过临时 SSH 转发访问。
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "127.0.0.1:7001:8081"
+    depends_on:
+      - mongo
+
+  neo4j:
+    image: neo4j:2026.09.0
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME:?请在 deploy/.env 配置}/${NEO4J_PASSWORD:?请在 deploy/.env 配置}
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache_size: 512m
+    volumes:
+      - ./volumes/neo4j-data:/data
+      - ./volumes/neo4j-logs:/logs
+    ports:
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
+
+  minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?请在 deploy/.env 配置}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?请在 deploy/.env 配置}
+    volumes:
+      - ./volumes/minio:/data
+    command: minio server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"

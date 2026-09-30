@@ -23,7 +23,8 @@ def get_llm_client(mode_name: str = None, temperature: float = 0.0, response_for
 
     # 1. 获取模型的名字
     model_name = mode_name or os.getenv('ITEM_MODEL', "qwen-flash")
-    api_key = os.getenv('OPENAI_API_KEY', "sk-26d57c968c364e7bb14f1fc350d4bff0")
+    # 仅从 .env / 环境变量读取密钥，避免在 Git 仓库中保存凭据。
+    api_key = os.getenv('OPENAI_API_KEY', '')
     api_base = os.getenv('OPENAI_API_BASE', "https://dashscope.aliyuncs.com/compatible-mode/v1")
 
     cache_key = (mode_name, response_format)  # 复合缓存key(a,b)

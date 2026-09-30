@@ -16,7 +16,9 @@ knowledge/test/
 # 运行日志与导入中间文件
 *.log
 knowledge/.runtime_logs/
+.runtime_logs/
 knowledge/processor/import_process/import_temp_dir/
+deploy/volumes/
 
 # 本地模型与缓存文件
 *.pt

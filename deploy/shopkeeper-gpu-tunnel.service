@@ -1,0 +1,14 @@
+[Unit]
+Description=Shopkeeper Brain GPU model SSH tunnels
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/bin/ssh -N -i /home/ubuntu/.ssh/shopkeeper_gpu_tunnel_ed25519 -p 39560 -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:6006:127.0.0.1:6006 -L 127.0.0.1:6008:127.0.0.1:6008 -L 127.0.0.1:6009:127.0.0.1:6009 root@connect.nmb1.seetacloud.com
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

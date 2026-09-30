@@ -338,8 +338,8 @@
     const fileInput = document.getElementById('fileInput');
     const fileList = document.getElementById('fileList');
 
-    // 模拟后端API地址
-    const API_BASE = 'http://127.0.0.1:8000';
+    // 与导入页面使用同一服务地址，兼容云服务器和 SSH 端口转发。
+    const API_BASE = window.location.origin;
 
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();

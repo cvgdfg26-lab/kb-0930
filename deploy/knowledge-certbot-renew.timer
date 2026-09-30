@@ -1,0 +1,11 @@
+[Unit]
+Description=Check knowledge base IP TLS certificate twice daily
+
+[Timer]
+OnCalendar=*-*-* 03,15:00:00
+RandomizedDelaySec=30m
+Persistent=true
+Unit=knowledge-certbot-renew.service
+
+[Install]
+WantedBy=timers.target
